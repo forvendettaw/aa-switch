@@ -57,17 +57,25 @@ SSE (Server-Sent Events) 的打字机体验，是 AI 对话的灵魂。我们用
 
 ## 快速开始
 
-### 1. 安装
+### 第一步：克隆并安装
 
 ```bash
-git clone https://github.com/yourname/aa-switch.git
+git clone https://github.com/forvendettaw/aa-switch.git
 cd aa-switch
 pnpm install
 ```
 
-### 2. 配置你的 AI 人格
+### 第二步：配置（一次性操作）
 
-创建 `~/.aa-switch/config.yaml`：
+**2.1 创建配置目录和文件**
+
+```bash
+mkdir -p ~/.aa-switch/personas
+```
+
+**2.2 创建配置文件**
+
+创建 `~/.aa-switch/config.yaml`，内容如下：
 
 ```yaml
 server:
@@ -75,68 +83,121 @@ server:
   host: "127.0.0.1"
 
 active_context:
-  persona: "coder"
-  inject_user_profile: true
+  persona: "coder"              # 默认人格
+  inject_user_profile: true     # 是否注入 user.md
 
 providers:
   anthropic_official:
     base_url: "https://api.anthropic.com/v1"
-    api_key: "env:ANTHROPIC_API_KEY"
+    api_key: "env:ANTHROPIC_API_KEY"  # 从环境变量读取
+
+routes:
+  anthropic: { provider: "anthropic_official" }
+  openai: { provider: "anthropic_official" }
 ```
 
-创建你的 persona 文件：
+> **注意**：`api_key: "env:ANTHROPIC_API_KEY"` 表示从系统环境变量 `ANTHROPIC_API_KEY` 读取真实密钥，保证密钥安全。
+
+**2.3 创建用户信息文件（可选但推荐）**
 
 ```bash
-mkdir -p ~/.aa-switch/personas
-echo "# 我是谁
+# 用户自我介绍
+echo "# 用户档案
 
-我是 Scott，一个热爱技术的开发者。" > ~/.aa-switch/user.md
-echo "# Coder Mode
-
-你是 Scott 的编程助手。简洁、专业、直击要点。代码优先，废话少说。" > ~/.aa-switch/personas/coder.md
+我是 Scott，全栈开发者，喜欢用技术解决实际问题。" > ~/.aa-switch/user.md
 ```
 
-### 3. 启动网关
+**2.4 启动人格已经在内置库中**
+
+项目已内置 11 种人格在 `personas/` 目录，无需手动创建。
+
+### 第三步：启动网关
 
 ```bash
-pnpm build
-pnpm start
+pnpm build   # 编译 TypeScript
+pnpm start   # 启动网关
 ```
 
-### 4. 开始对话
+成功后会看到：
 
-告诉 Claude Code 使用本地网关：
+```
+🚀 aa-switch is running on http://127.0.0.1:8080
+👤 Active Persona: coder
+```
+
+**保持这个终端开着**，网关就会一直在后台运行。
+
+### 第四步：配置 AI 客户端
+
+打开**另一个终端**，设置环境变量：
 
 ```bash
+# 告诉 AI 客户端使用本地网关
 export ANTHROPIC_BASE_URL="http://127.0.0.1:8080/v1"
-export ANTHROPIC_API_KEY="sk-ant-placeholder"
+export ANTHROPIC_API_KEY="sk-ant-placeholder"   # 任意值，真实密钥在配置里
+```
+
+### 第五步：启动 Claude Code
+
+```bash
 claude
 ```
 
-现在，Claude Code 就是一个穿着「coder 外套」的 AI 了。
+现在 Claude Code 已经是一个穿着「coder」人格外套的 AI 了。
 
 ---
 
-## 切换人格，一秒的事儿
+## 切换人格
+
+### 查看所有可用人格
 
 ```bash
-# 从 coder 切换到 monica
-aa-switch use monica
+ls ~/.aa-switch/personas/
+```
 
-# 查看当前状态
+输出：
+```
+coder.md
+entp_debater.md
+intj_architect.md
+isfj_guardian.md
+istp_hacker.md
+machiavelli_exec.md
+...
+```
+
+### 一键切换
+
+```bash
+# 切换到架构师人格
+aa-switch use intj_architect
+
+# 切换到混沌破局者
+aa-switch use entp_debater
+
+# 切换到极客老炮
+aa-switch use istp_hacker
+```
+
+### 查看当前状态
+
+```bash
 aa-switch status
 ```
 
+输出：
 ```
 🟢 Status: Running
    Server: 127.0.0.1:8080
-   👤 Active Persona: monica
-   📁 Context Chain:
-      - ~/.aa-switch/user.md
-      - ~/.aa-switch/personas/monica.md
+   👤 Active Persona: intj_architect
+   📁 Context Chain (2 files):
+      - /Users/scott/.aa-switch/user.md
+      - /Users/scott/.aa-switch/personas/intj_architect.md
 ```
 
-**Claude Code 无需重启。** 它甚至不会注意到 AI 的人格已经变了——但你会明显感受到回答风格的差异。
+### 重要：Claude Code 无需重启
+
+切换人格后，直接在 Claude Code 对话框继续聊天即可。AI 会立即以新人格响应。
 
 ---
 
