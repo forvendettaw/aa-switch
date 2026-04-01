@@ -180,6 +180,27 @@ pnpm tauri build
 
 ---
 
+## 内置 Persona 库
+
+项目内置了 5 个高维度人格，可直接使用：
+
+| Persona | MBTI | 特点 |
+|---------|------|------|
+| `intj_architect` | INTJ · 5w4 | 架构机器 · 显微镜级审查 · 抗拒过度设计 |
+| `entp_debater` | ENTP · 7w8 | 混沌破局者 · 拥抱前沿 · 虎头蛇尾 |
+| `machiavelli_exec` | ENTJ | 铁血执行官 · ROI导向 · 技术债杠杆 |
+| `isfj_guardian` | ISFJ · 6w5 | 系统守夜人 · 风险厌恶 · 鲁棒性偏执 |
+| `istp_hacker` | ISTP · 5w6 | 极客老炮 · Less is More · Talk is cheap |
+
+```bash
+aa-switch use intj_architect   # 召唤架构机器
+aa-switch use entp_debater    # 召唤混沌破局者
+```
+
+详细人格说明见 [personas/](personas/) 目录。
+
+---
+
 ## 技术细节（可选阅读）
 
 对于喜欢深挖的同学：
