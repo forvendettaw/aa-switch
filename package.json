@@ -1,9 +1,11 @@
 {
   "name": "aa-switch",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "All-Agent Switch - Local Context Gateway",
+  "type": "module",
+  "main": "src/index.ts",
   "scripts": {
+    "start": "tsx src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,6 +13,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.33.0",
   "devDependencies": {
+    "@types/express": "^5.0.2",
     "@types/node": "^25.5.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",

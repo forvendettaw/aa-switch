@@ -47,8 +47,8 @@ export const RoutesSchema = z.record(z.string(), RouteEntrySchema);
  * 主配置结构
  */
 export const ConfigSchema = z.object({
-  server: ServerSchema.default({}),
-  active_context: ActiveContextSchema.default({}),
+  server: ServerSchema.optional().default({ port: 8080, host: '127.0.0.1' }),
+  active_context: ActiveContextSchema.optional().default({ inject_user_profile: false }),
   providers: z.record(z.string(), ProviderSchema),
   routes: RoutesSchema,
 });

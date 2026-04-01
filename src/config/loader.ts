@@ -1,7 +1,8 @@
 import { parse } from 'yaml';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { ConfigSchema, ContextChainSchema, Config, type ContextChain } from './schema';
+import { ConfigSchema, ContextChainSchema } from './schema.js';
+import type { Config, ContextChain } from './schema.js';
 
 /**
  * 从指定路径加载并校验 YAML 配置文件
@@ -32,7 +33,7 @@ export function normalizeToContextChain(
 
   // 高级模式优先
   if (active_context.advanced_context_chain) {
-    return active_context.advanced_context_chain.map(p => resolve(baseDir, p));
+    return active_context.advanced_context_chain.map((p: string) => resolve(baseDir, p));
   }
 
   const chain: ContextChain = [];
