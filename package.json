@@ -3,18 +3,32 @@
   "version": "1.0.0",
   "description": "All-Agent Switch - Local Context Gateway",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "bin": {
-    "aa-switch": "./src/cli/bin.js"
+    "aa-switch": "./dist/cli/bin.js"
   },
   "scripts": {
-    "start": "tsx src/cli/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/cli/index.ts",
     "cli": "tsx src/cli/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "link": "npm link",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": [],
+  "keywords": [
+    "proxy",
+    "gateway",
+    "ai",
+    "claude",
+    "openai",
+    "context",
+    "persona"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "packageManager": "pnpm@10.33.0",
   "devDependencies": {
     "@types/express": "^5.0.2",
@@ -29,5 +43,8 @@
     "http-proxy-middleware": "^3.0.5",
     "yaml": "^2.8.3",
     "zod": "^4.3.6"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

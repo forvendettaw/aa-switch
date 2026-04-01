@@ -55,7 +55,7 @@ export function detectProtocol(path: string): ProtocolType {
  * 为 Anthropic 请求追加 System Prompt
  * Anthropic 格式: { system: "...", messages: [...] }
  */
-function injectAnthropicSystem(body: Record<string, unknown>, injectedContent: string): Record<string, unknown> {
+export function injectAnthropicSystem(body: Record<string, unknown>, injectedContent: string): Record<string, unknown> {
   const existingSystem = (body.system as string) || '';
   const newSystem = existingSystem
     ? `${existingSystem}\n\n---\n\n${injectedContent}`
@@ -71,7 +71,7 @@ function injectAnthropicSystem(body: Record<string, unknown>, injectedContent: s
  * 为 OpenAI 请求追加 System Prompt
  * OpenAI 格式: { messages: [{role: "system", content: "..."}, ...] }
  */
-function injectOpenAISystem(body: Record<string, unknown>, injectedContent: string): Record<string, unknown> {
+export function injectOpenAISystem(body: Record<string, unknown>, injectedContent: string): Record<string, unknown> {
   const messages = (body.messages as any[]) || [];
 
   // 查找现有的 system 消息
