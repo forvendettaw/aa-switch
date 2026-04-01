@@ -7,9 +7,10 @@ use tauri::{
     AppHandle, Emitter, Manager, State,
 };
 
-// State to track current persona
+// State to track current persona and agent
 pub struct AppState {
     pub current_persona: Mutex<String>,
+    pub current_agent: Mutex<String>,
     pub gateway_running: Mutex<bool>,
 }
 
@@ -17,20 +18,37 @@ impl Default for AppState {
     fn default() -> Self {
         Self {
             current_persona: Mutex::new("coder".to_string()),
+            current_agent: Mutex::new("anthropic".to_string()),
             gateway_running: Mutex::new(false),
         }
     }
 }
 
+// Get available agents - returns list of agents with active flag based on current_agent
+fn get_available_agents(current_agent: &str) -> Vec<Agent> {
+    vec![
+        Agent { name: "anthropic".to_string(), provider: "anthropic_official".to_string(), active: "anthropic" == current_agent },
+        Agent { name: "openai".to_string(), provider: "siliconflow".to_string(), active: "openai" == current_agent },
+    ]
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Status {
     pub active_persona: String,
+    pub active_agent: String,
     pub running: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Persona {
     pub name: String,
+    pub active: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Agent {
+    pub name: String,
+    pub provider: String,
     pub active: bool,
 }
 
@@ -100,12 +118,38 @@ fn start_gateway() -> Result<(), String> {
 #[tauri::command]
 fn get_status(state: State<'_, AppState>) -> Result<Status, String> {
     let current_persona = state.current_persona.lock().unwrap().clone();
+    let current_agent = state.current_agent.lock().unwrap().clone();
     let running = *state.gateway_running.lock().unwrap();
 
     Ok(Status {
         active_persona: current_persona,
+        active_agent: current_agent,
         running,
     })
+}
+
+// Get available agents
+#[tauri::command]
+fn get_agents(state: State<'_, AppState>) -> Result<Vec<Agent>, String> {
+    let current_agent = state.current_agent.lock().unwrap().clone();
+    let agents = get_available_agents(&current_agent);
+    Ok(agents)
+}
+
+// Switch agent
+#[tauri::command]
+fn switch_agent(name: String, state: State<'_, AppState>) -> Result<(), String> {
+    // Validate agent exists
+    let current_agent = state.current_agent.lock().unwrap().clone();
+    let agents = get_available_agents(&current_agent);
+    if !agents.iter().any(|a| a.name == name) {
+        return Err(format!("Agent '{}' not found", name));
+    }
+
+    // Update state
+    *state.current_agent.lock().unwrap() = name;
+
+    Ok(())
 }
 
 // Get available personas
@@ -147,6 +191,8 @@ pub fn run_tray() {
         .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
             get_status,
+            get_agents,
+            switch_agent,
             get_personas,
             switch_persona
         ])
@@ -206,11 +252,28 @@ pub fn run_tray() {
                 ],
             )?;
 
-            // Create tray icon
+            // Create a hidden window to register the bundle icons (required for default_window_icon)
+            let _icon_window = tauri::WebviewWindowBuilder::new(
+                app,
+                "icon_window",
+                tauri::WebviewUrl::App("about:blank".into()),
+            )
+            .title("aa-switch")
+            .inner_size(1.0, 1.0)
+            .visible(false)
+            .skip_taskbar(true)
+            .build()
+            .expect("Failed to create icon window");
+
+            // Now default_window_icon should work (icons are registered via the hidden window)
+            let icon = app.default_window_icon()
+                .cloned()
+                .expect("No default icon - check bundle icons config");
+
             let _tray = TrayIconBuilder::new()
-                .icon(app.default_window_icon().unwrap().clone())
+                .icon(icon)
                 .menu(&menu)
-                .show_menu_on_left_click(false)
+                .show_menu_on_left_click(true)
                 .on_menu_event(move |app, event| {
                     handle_menu_event(app, event, app_handle.clone());
                 })
