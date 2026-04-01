@@ -1,0 +1,22 @@
+{
+  "name": "aa-switch-ui",
+  "version": "1.0.0",
+  "description": "aa-switch System Tray GUI",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.5.0",
+    "@tauri-apps/plugin-shell": "^2.2.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.5.0",
+    "typescript": "^6.0.2",
+    "vite": "^6.0.0"
+  },
+  "packageManager": "pnpm@10.33.0"
+}
