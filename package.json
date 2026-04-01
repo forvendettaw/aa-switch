@@ -4,8 +4,12 @@
   "description": "All-Agent Switch - Local Context Gateway",
   "type": "module",
   "main": "src/index.ts",
+  "bin": {
+    "aa-switch": "./src/cli/bin.js"
+  },
   "scripts": {
-    "start": "tsx src/index.ts",
+    "start": "tsx src/cli/index.ts",
+    "cli": "tsx src/cli/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

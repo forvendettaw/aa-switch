@@ -1,16 +1,16 @@
-import { createServer } from 'http';
 import type { Server } from 'http';
 import express from 'express';
 import type { Express, Request, Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import type { Config } from '../config/schema.js';
-import { resolveApiKey, createContextInjector } from './interceptor.js';
+import { resolveApiKey } from './interceptor.js';
+import { ConfigManager } from '../config/manager.js';
 
 /**
  * 创建 HTTP 代理中间件
  * 关键点：SSE 响应必须使用零缓冲透传
  */
-export function createProxy(config: Config) {
+export function createProxy(config: Config, configManager: ConfigManager) {
   return createProxyMiddleware({
     // 代理目标
     router: (req: Request) => {
@@ -84,30 +84,71 @@ export function createProxy(config: Config) {
 }
 
 /**
+ * 创建上下文注入中间件
+ * 每次请求时从 ConfigManager 获取最新的 injected content
+ */
+export function createContextMiddleware(configManager: ConfigManager) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    // 仅处理 JSON 请求体
+    if (!req.body || typeof req.body !== 'object') {
+      return next();
+    }
+
+    const { detectProtocol, injectAnthropicSystem, injectOpenAISystem } = require('./interceptor.js');
+    const protocol = detectProtocol(req.path);
+    const injectedContent = configManager.getInjectedContent();
+
+    if (!injectedContent) {
+      return next();
+    }
+
+    if (protocol === 'anthropic') {
+      req.body = injectAnthropicSystem(req.body as Record<string, unknown>, injectedContent);
+    } else if (protocol === 'openai') {
+      req.body = injectOpenAISystem(req.body as Record<string, unknown>, injectedContent);
+    }
+    // unknown 协议直接透传
+
+    next();
+  };
+}
+
+import type { NextFunction } from 'express';
+
+/**
  * 启动代理服务器
  */
-export function startProxyServer(config: Config, configBaseDir: string): Server {
+export function startProxyServer(configManager: ConfigManager): Server {
   const app: Express = express();
+  const config = configManager.getConfig();
 
   // 解析 JSON 请求体
   app.use(express.json({ limit: '10mb' }));
 
-  // 挂载上下文注入拦截器
-  const contextInjector = createContextInjector(config, configBaseDir);
-  app.use(contextInjector);
+  // 挂载上下文注入拦截器（每次请求都获取最新内容）
+  const contextMiddleware = createContextMiddleware(configManager);
+  app.use(contextMiddleware);
 
   // 挂载代理中间件
-  const proxy = createProxy(config);
+  const proxy = createProxy(config, configManager);
   app.use('/v1', proxy);
 
   // 健康检查端点
   app.get('/health', (_req: Request, res: Response) => {
-    res.json({ status: 'ok' });
+    res.json({
+      status: 'ok',
+      active_persona: configManager.getConfig().active_context.persona || 'none',
+      context_files: configManager.getContextChain().length,
+    });
   });
+
+  // 启动配置热重载监听
+  configManager.startWatching();
 
   const { host, port } = config.server;
   const server = app.listen(port, host, () => {
     console.log(`🚀 aa-switch is running on http://${host}:${port}`);
+    console.log(`👤 Active Persona: ${configManager.getConfig().active_context.persona || 'none'}`);
   });
 
   return server;

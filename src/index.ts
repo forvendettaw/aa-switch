@@ -1,7 +1,6 @@
 import { startProxyServer } from './proxy/proxy.js';
-import { loadConfig } from './config/loader.js';
-import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
+import { getConfigManager } from './config/manager.js';
+import { resolve } from 'path';
 
 // 获取配置文件路径
 // 默认: ~/.aa-switch/config.yaml
@@ -12,11 +11,12 @@ function getConfigPath(): string {
 
 function main() {
   const configPath = getConfigPath();
-  const configBaseDir = dirname(configPath);
 
   console.log(`📄 Loading config from: ${configPath}`);
 
-  const config = loadConfig(configPath);
+  // 初始化配置管理器
+  const configManager = getConfigManager(configPath);
+  const config = configManager.getConfig();
 
   console.log(`✅ Config loaded successfully`);
   console.log(`   Server: ${config.server.host}:${config.server.port}`);
@@ -30,7 +30,7 @@ function main() {
     console.log(`     - Inject User Profile: ${config.active_context.inject_user_profile}`);
   }
 
-  startProxyServer(config, configBaseDir);
+  startProxyServer(configManager);
 }
 
 main();
