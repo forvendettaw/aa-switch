@@ -1,6 +1,6 @@
 # aa-switch
 
-> **All-Agent Switch** — 本地认知路由网关
+> **All-Agent Switch** — 让 AI 更懂你
 
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/typescript-ESNext-blue)](https://www.typescriptlang.org/)
@@ -8,71 +8,50 @@
 
 ---
 
+## 缘起
+
+你是否有过这样的经历——
+
+清晨☀️，你打开 Claude Code，准备开始一天的工作。今天的任务是重构一个复杂的模块，你需要「专业模式」：严谨、高效、少说废话。
+
+午后🌤️，Code Review 完毕，现在要写一封给客户的邮件。你切换到「 Monica 模式」：温暖、专业、措辞得体。
+
+深夜🌙，灵感突现，你想和 AI 聊聊新产品的 idea。你换上「创业者和投资人模式」：有格局、有洞察、能一针见血指出问题。
+
+**aa-switch** 就是为这样的你设计的。
+
+它是一个安静运行在你电脑后台的「AI 人格切换器」。一行命令，瞬间切换。Claude Code、OpenClaw——任何支持自定义 API 地址的 AI 工具，都能立刻「变身」。
+
+---
+
 ## 一句话定位
 
-**aa-switch** 是一款专为 AI 开发者与多智能体框架设计的**本地认知路由网关**，以反向代理形态运行，无缝兼容 Claude Code、OpenClaw、Gemini CLI 等客户端，通过配置驱动的「上下文链」动态注入 System Prompt。
+**aa-switch** 是本地 AI 的「人格大衣橱」。在不同的上下文之间切换，就像换一件外套一样自然。
 
 ---
 
-## 架构图
+## 核心理念
 
-```mermaid
-flowchart LR
-    subgraph Client["客户端 (Claude Code / OpenClaw)"]
-        A[API Request]
-    end
+### 🎭 Persona 是灵魂
 
-    subgraph Gateway["aa-switch 网关"]
-        B[Express Proxy]
-        C[Context Injector]
-        D[Config Manager]
-        E[fs.watch Hot-Reload]
-    end
+你的 AI 不应该永远只有一个面孔。通过 Markdown 文件，你可以为 AI 塑造无数种人格：
 
-    subgraph Providers["上游 Provider"]
-        F[Anthropic Official]
-        G[SiliconFlow]
-        H[Other Providers]
-    end
+- **coder** — 专注、高效、代码优先
+- **monica** — 温暖、耐心、善解人意
+- **cto** — 战略眼光、系统思维、风险意识
+- 或者任何你能想到的角色
 
-    subgraph Context["上下文文件"]
-        I[user.md]
-        J[personas/coder.md]
-        K[personas/monica.md]
-    end
+### 🔄 切换应该无感
 
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> |reload| D
-    C --> |归一化 ContextChain| F
-    C --> |归一化 ContextChain| G
-    D --> |读取| I
-    D --> |读取| J
-    D --> |读取| K
+修改配置 → 保存 → AI 即刻「新装上阵」。无需重启服务，无需调整环境变量。`fs.watch` 在背后默默工作，0 秒停机。
 
-    style Gateway fill:#2d3748,color:#fff
-    style Context fill:#4a5568,color:#fff
-```
+### 🛡️ 安全是底线
 
-**设计原则：约定优于配置**
+API Key 不应该出现在任何配置文件里。`env:VAR_NAME` 格式，让敏感信息留在环境变量中，你的信息你做主。
 
-- 对用户极简：仅需配置 `persona` 和 `inject_user_profile`
-- 对引擎抽象：极简配置归一化为 ContextChain 数组
-- 对极客开放：`advanced_context_chain` 预留高级模式
+### 🌊 流式响应，必须原汁原味
 
----
-
-## 核心特性
-
-| 特性 | 说明 |
-|------|------|
-| **零缓冲 SSE 透传** | `stream.pipe()` 保证打字机体验 |
-| **热重载** | `fs.watch` 监听配置变更，0 秒停机 |
-| **多协议兼容** | 同时支持 Anthropic `/v1/messages` 和 OpenAI `/v1/chat/completions` |
-| **凭证管理** | `env:VAR_NAME` 格式，环境变量接管敏感信息 |
-| **TypeScript + Zod** | 运行时配置校验，类型安全 |
+SSE (Server-Sent Events) 的打字机体验，是 AI 对话的灵魂。我们用 `stream.pipe()` 透传，绝不缓冲一秒。
 
 ---
 
@@ -81,18 +60,12 @@ flowchart LR
 ### 1. 安装
 
 ```bash
-# 克隆项目
 git clone https://github.com/yourname/aa-switch.git
 cd aa-switch
-
-# 安装依赖
 pnpm install
-
-# 全局安装（可选）
-pnpm link --global
 ```
 
-### 2. 配置
+### 2. 配置你的 AI 人格
 
 创建 `~/.aa-switch/config.yaml`：
 
@@ -102,201 +75,141 @@ server:
   host: "127.0.0.1"
 
 active_context:
-  persona: "coder"           # 极简模式
-  inject_user_profile: true  # 自动加载 user.md
+  persona: "coder"
+  inject_user_profile: true
 
 providers:
   anthropic_official:
     base_url: "https://api.anthropic.com/v1"
     api_key: "env:ANTHROPIC_API_KEY"
-  siliconflow:
-    base_url: "https://api.siliconflow.cn/v1"
-    api_key: "env:SILICONFLOW_API_KEY"
-
-routes:
-  anthropic: { provider: "anthropic_official" }
-  openai: { provider: "siliconflow" }
 ```
 
-创建上下文文件：
+创建你的 persona 文件：
 
 ```bash
 mkdir -p ~/.aa-switch/personas
-echo "# User Profile\n\n我是开发者 Scott。" > ~/.aa-switch/user.md
-echo "# Coder Persona\n\n你是专业程序员，精通 TypeScript。" > ~/.aa-switch/personas/coder.md
+echo "# 我是谁
+
+我是 Scott，一个热爱技术的开发者。" > ~/.aa-switch/user.md
+echo "# Coder Mode
+
+你是 Scott 的编程助手。简洁、专业、直击要点。代码优先，废话少说。" > ~/.aa-switch/personas/coder.md
 ```
 
-### 3. 启动
+### 3. 启动网关
 
 ```bash
-# 开发模式
-pnpm dev
-
-# 或构建后运行
 pnpm build
 pnpm start
 ```
 
-### 4. 客户端接入
+### 4. 开始对话
 
-将客户端的 API Base URL 指向本地网关：
+告诉 Claude Code 使用本地网关：
 
 ```bash
 export ANTHROPIC_BASE_URL="http://127.0.0.1:8080/v1"
-export ANTHROPIC_API_KEY="dummy_key"  # 真实 Key 由 config.yaml 接管
+export ANTHROPIC_API_KEY="sk-ant-placeholder"
+claude
 ```
+
+现在，Claude Code 就是一个穿着「coder 外套」的 AI 了。
 
 ---
 
-## CLI 命令
+## 切换人格，一秒的事儿
 
 ```bash
-# 启动网关
-aa-switch start
-
-# 切换 persona（热重载，无需重启）
+# 从 coder 切换到 monica
 aa-switch use monica
 
-# 查看状态
+# 查看当前状态
 aa-switch status
 ```
-
-**输出示例：**
 
 ```
 🟢 Status: Running
    Server: 127.0.0.1:8080
    👤 Active Persona: monica
-   ⚙️  User Profile Injected: true
-   📁 Context Chain (2 files):
-      - /Users/scott/.aa-switch/user.md
-      - /Users/scott/.aa-switch/personas/monica.md
-   🌐 Routes:
-      - anthropic: https://api.anthropic.com/v1
-      - openai: https://api.siliconflow.cn/v1
+   📁 Context Chain:
+      - ~/.aa-switch/user.md
+      - ~/.aa-switch/personas/monica.md
 ```
+
+**Claude Code 无需重启。** 它甚至不会注意到 AI 的人格已经变了——但你会明显感受到回答风格的差异。
 
 ---
 
-## 配合 Claude Code 使用
+## 桌面托盘（可选）
 
-### 1. 启动网关
+想要更直观？安装 **aa-switch-ui**，一个运行在系统托盘的小工具。
 
-```bash
-aa-switch start
-```
-
-### 2. 配置环境变量
+- 点击托盘图标 → 切换人格
+- 实时显示当前状态
+- 自动启动网关
 
 ```bash
-export ANTHROPIC_BASE_URL="http://127.0.0.1:8080/v1"
-export ANTHROPIC_API_KEY="sk-ant-placeholder"  # 任意值
+cd aa-switch-ui
+pnpm install
+pnpm tauri build
 ```
-
-### 3. 启动 Claude Code
-
-```bash
-claude
-```
-
-Claude Code 发出的每个请求都会自动携带 `user.md` 和当前 persona 的内容。
 
 ---
 
 ## 编写自定义 Persona
 
-在 `~/.aa-switch/personas/` 目录下创建 Markdown 文件：
+在 `~/.aa-switch/personas/` 创建任意 `.md` 文件：
 
 ```markdown
-# persona: Monica
+# Monica
 
-你是 Monica，一位贴心、热情的 AI 助手。
+你是 Monica，一个温暖而专业的 AI 助手。
 
-## 性格特点
-- 善解人意，善于倾听
-- 回答简洁有条理
-- 适度使用 emoji 增添亲切感
+## 风格
+- 善解人意，但不矫情
+- 回答简洁，但不失温度
+- 适当用 emoji，但不过度
 
-## 专业领域
-- 日常咨询和建议
-- 创意写作辅助
-- 编程问题解答
+## 专长
+- 邮件写作和润色
+- 创意讨论
+- 日常咨询
 ```
 
-切换 persona：
-
-```bash
-aa-switch use Monica
-```
+保存后，`aa-switch use monica` 即可切换。
 
 ---
 
-## 高级模式
+## 技术细节（可选阅读）
 
-使用 `advanced_context_chain` 精确控制上下文加载顺序：
-
-```yaml
-active_context:
-  advanced_context_chain:
-    - "./contexts/project_rules.md"
-    - "./personas/monica.md"
-    - "./contexts/codingStandards.md"
-```
-
----
-
-## 测试
-
-```bash
-# 运行所有测试
-pnpm test
-
-# 监听模式
-pnpm test:watch
-
-# 覆盖率报告
-pnpm test:coverage
-```
-
----
-
-## 项目结构
+对于喜欢深挖的同学：
 
 ```
 aa-switch/
 ├── src/
-│   ├── cli/
-│   │   ├── index.ts        # CLI 入口 (commander)
-│   │   └── bin.js          # 全局命令入口
-│   ├── config/
-│   │   ├── schema.ts       # Zod 配置结构定义
-│   │   ├── loader.ts       # YAML 读取与归一化
-│   │   └── manager.ts      # 配置管理器 + 热重载
-│   ├── proxy/
-│   │   ├── interceptor.ts   # 上下文注入逻辑
-│   │   └── proxy.ts        # Express 代理服务器
-│   └── index.ts            # 默认入口
+│   ├── cli/          # Commander CLI
+│   ├── config/       # Zod 校验 + YAML 加载
+│   ├── proxy/        # Express 反向代理 + 上下文注入
+│   └── index.ts
 ├── tests/
-│   ├── unit.test.ts        # 单元测试
-│   └── e2e.test.ts        # 端到端测试
-├── vitest.config.ts
-└── package.json
+│   ├── unit.test.ts
+│   └── e2e.test.ts
+└── aa-switch-ui/    # 可选的 Tauri 托盘应用
 ```
 
----
-
-## 技术栈
-
-- **Runtime**: Node.js 18+
-- **Language**: TypeScript (ESM)
-- **Web Framework**: Express 5
-- **Proxy**: http-proxy-middleware
-- **Validation**: Zod 4
-- **CLI**: Commander
-- **Testing**: Vitest
+**技术栈：**
+- Node.js 18+ / TypeScript (ESM)
+- Express 5 + http-proxy-middleware
+- Zod 4 配置校验
+- Vitest 测试
+- Tauri v2 桌面托盘（可选）
 
 ---
 
 ## License
 
 MIT
+
+---
+
+*让 AI 成为更好的自己，从切换 persona 开始。*
