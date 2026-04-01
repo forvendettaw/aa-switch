@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'fs';
 import { resolve } from 'path';
+import { stringify, parse } from 'yaml';
 
-// 测试配置目录
+// 测试配置目录 (与 E2E 测试分开)
 const TEST_CONFIG_DIR = resolve(process.cwd(), '.test-unit-aa-switch');
 const TEST_CONFIG_PATH = resolve(TEST_CONFIG_DIR, 'config.yaml');
 const TEST_PERSONAS_DIR = resolve(TEST_CONFIG_DIR, 'personas');
@@ -34,7 +35,7 @@ function setupTestConfig() {
     },
   };
 
-  writeFileSync(TEST_CONFIG_PATH, JSON.stringify(testConfig, null, 2));
+  writeFileSync(TEST_CONFIG_PATH, stringify(testConfig));
 }
 
 function cleanupTestConfig() {
@@ -46,10 +47,9 @@ function cleanupTestConfig() {
 // 读取并更新配置
 function updateConfig(updates: any) {
   const content = readFileSync(TEST_CONFIG_PATH, 'utf-8');
-  const config = JSON.parse(content);
+  const config = parse(content);
   const newConfig = { ...config, ...updates };
-  writeFileSync(TEST_CONFIG_PATH, JSON.stringify(newConfig, null, 2));
-  return newConfig;
+  writeFileSync(TEST_CONFIG_PATH, stringify(newConfig));
 }
 
 describe('Unit: ConfigLoader', () => {
